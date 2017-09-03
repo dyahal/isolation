@@ -5,6 +5,7 @@ and include the results in your report.
 import random
 import math
 
+
 class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
     
@@ -343,26 +344,24 @@ class AlphaBetaPlayer(IsolationPlayer):
         #Check if board is empty, return move to the center(position closest to center)
         if game.get_legal_moves() == game.get_blank_spaces():
             return (math.ceil(game.width /2), math.ceil(game.height /2))
-            
+           
         try:
-            i = 0;
+            i = 1;
+
             #Do Loop until node reached end or timeout
             while True:
-                i = i+1;
                 best_move = self.alphabeta(game,i);
-                
-                if self.EndNode == True:
-                    break
-            return best_move
+                i = i+1;
+            #return best_move
             
         except SearchTimeout:
-            return best_move
-            #pass
-        
+            #return best_move
+            pass
+
         return best_move;
 
         
-    def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
+    def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), player = "Maximize"):
         """Implement depth-limited minimax search with alpha-beta pruning as
         described in the lectures.
 
@@ -407,77 +406,25 @@ class AlphaBetaPlayer(IsolationPlayer):
                 each helper function or else your agent will timeout during
                 testing.
         """
-        """
-        def min_values(game, depth, alpha, beta) :
-            
-            #Implement minimum values search for alpha beta
-            
-            
-            #Check timeout
-            if self.time_left() < self.TIMER_THRESHOLD:
-                raise SearchTimeout();
-            #Check if the depth reached the max depth
-            if depth == 0:
-                return self.score(game,self);
-            
-            #Check if node reached end
-            if game.utility(self) != 0 :
-                self.EndNode = True;
-                return self.score(game,self);
-                
-            v = float("inf")
-            #print("0. Minimum alpha: %f beta: %f", alpha, beta);
-            #Calculate minimum value
-            for s in game.get_legal_moves():
-                v = min(v, max_values(game.forecast_move(s),depth-1,alpha,beta)) 
-                beta = min(beta, v);
-                if beta <= alpha:
-                    break;
-            return v;
-        """
-        """
-        def max_values(game, depth, alpha, beta) :
-            
-            #Implement maximum values search for alpha beta
-            
-            #Check timeout
-            if self.time_left() < self.TIMER_THRESHOLD:
-                raise SearchTimeout();
-            #print("-1. Maximum alpha: %f beta: %f %d", alpha, beta, depth);
-            #Check if the depth reached the max depth
-            if depth == 0:
-                return self.score(game,self);
-
-            #Check if node reached end
-            if game.utility(self) != 0 :
-                self.EndNode = True;
-                return self.score(game,self);
-            
-            v = float("-inf")
-            #Calculate maximum value
-            for s in game.get_legal_moves():
-                v = max(v, min_values(game.forecast_move(s),depth-1,alpha,beta))
-                alpha = max(alpha, v);
-                #compare values with beta
-                if beta <= alpha:
-                    break;
-            return v;
-        """
+        
         def alphabetaprunning(game, depth, alpha, beta, maxVal) :
             #Check timeout
             if self.time_left() < self.TIMER_THRESHOLD:
                 raise SearchTimeout();
             
             #Check if the depth reached the max depth
-            if depth == 0:
-                return self.score(game,self)
+            
 
             #Check if node reached end
-            if game.utility(self) != 0 :
-                self.EndNode = True;
-                return self.score(game,self);
+            #if game.utility(self) != 0 :
+                #self.EndNode = True;
+                #return game.utility(self)
+                #return self.score(game,self);
 
             if maxVal == True :
+                if depth == 0:
+                    return self.score(game,self)
+            
                 v = float("-inf")
                 #Calculate maximum value
                 for s in game.get_legal_moves():
@@ -485,9 +432,10 @@ class AlphaBetaPlayer(IsolationPlayer):
                     if v >= beta:
                         return v
                     alpha = max(alpha, v);
-                
                 return v;               
             else:
+                if depth == 0:
+                    return self.score(game,self)
                 v = float("inf")
                 #Calculate minimum value
                 for s in game.get_legal_moves():
@@ -495,10 +443,12 @@ class AlphaBetaPlayer(IsolationPlayer):
                     if v <= alpha:
                         return v;
                     beta = min(beta, v);
-                
                 return v;
 
+
+        best_value = float("-inf")
         
+        best_move = (-1,-1)
         #alpha beta timeout check
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
@@ -509,9 +459,20 @@ class AlphaBetaPlayer(IsolationPlayer):
             return game.get_player_location(self);
         
         #alpha beta calculate best move (start recursive function)
-            
+        
         legal_moves = game.get_legal_moves()
-        move = (max(legal_moves, key = lambda a: alphabetaprunning (game.forecast_move(a), depth-1, alpha,beta ,False)))
-
-        return move;
-
+        for move in legal_moves:
+            if self==game.active_player:
+                value = alphabetaprunning (game.forecast_move(move), depth-1, alpha,beta ,False);
+            elif self == game.inactive_player:
+            #    print("here");
+                value = alphabetaprunning (game.forecast_move(move), depth-1, alpha,beta ,True);
+            if value >= best_value:
+                best_move = move;
+                best_value = value;
+            if best_value >= beta:
+                return move;
+            alpha = max(alpha, value);
+        return best_move;
+        
+        
